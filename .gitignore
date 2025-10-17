@@ -2,4 +2,4 @@ config.py
 .venv/
 dist/
 **/__pycache__/
-**/build/
+src/build/
