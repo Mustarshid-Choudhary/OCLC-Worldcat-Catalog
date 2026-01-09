@@ -1,22 +1,29 @@
-from bookops_worldcat import WorldcatAccessToken, MetadataSession
+from bookops_worldcat.authorize import WorldcatAccessToken
+from bookops_worldcat.metadata_api import MetadataSession
+from concurrent.futures import ThreadPoolExecutor
 import xml.etree.cElementTree as ET
 import openpyxl as op
 from tkinter import Tk, filedialog
 import os
-import config as cf
+import json
 
-def verify_token():
+def verify_token(filepath):
     """
-    Create and return a token after verifying that it's valid.
-    Insert the acquired API Key, secret, and scopes into config_template.py
-    and import it here in place of config to access the variables.
+    Given a .json file with the valid API credentials, create and return a
+    WorldcatAccessToken.
 
-    :return: a token
+    :return: a WorldcatAccessToken
     """
-    token = WorldcatAccessToken(key=cf.KEY, secret=cf.SECRET, scopes=cf.SCOPES)
+    with open(filepath, "r") as file:
+        data = json.load(file)
+        token = WorldcatAccessToken(
+            key=data["key"],
+            secret=data["secret"],
+            scopes=data["scopes"],
+        )
 
-    print(token) # > access_token: 'tk_Yebz4BpEp9dAsghA7KpWx6dYD1OZKWBlHjqW', expires_at: '2024-01-01 17:19:58Z'
-    print("Is expired: " + str(token.is_expired())) # > False
+    print(token)
+    print("Is expired: " + str(token.is_expired()))
 
     return token
 
@@ -164,6 +171,44 @@ def save_new_sheet(path, work_book):
         print("Save canceled.")
         return None
 
+def get_record_and_holding_info(token, oclc_num):
+    """
+    Given the token and an oclc_num, use the WorldcatMetadataAPI to get the records
+    and the holdings information for the OCLC number, and return them.
+
+    :param token: a WorldCatAccessToken
+    :param oclc_num: the current OCLC number in the given input file
+    :return: a tuple of two Response objects, the first being the result and 
+    the second being the response
+    """
+    with MetadataSession(authorization = token) as session:
+        result = session.bib_get(oclc_num)
+        response = session.summary_holdings_get(oclc_num)
+    return (result, response)
+
+def get_all_info(infile, token):
+    """
+    Use multithreading for all the API calls needed for the OCLC numbers in
+    the given input file. After obtaining all of the information, parse it
+    and return a list of tuples, where each tuple is a (result, response).
+
+    :param infile: the input OCLC number file
+    :param token: a WorldcatAccessToken
+    :return: a list of tuples, where each entry in the tuple is a Response object
+    """
+    rate_limit = 50
+    futures = []
+    with ThreadPoolExecutor(max_workers = rate_limit) as executor:
+        for oclc_num in infile:
+            futures.append(executor.submit(get_record_and_holding_info, token, oclc_num))
+    
+    info = []
+    for future in futures:
+        if future.result():
+            info.append(future.result())
+    
+    return info
+
 def run_program(input_file):
     """
     Run the script for every OCLC number in the input text file.
@@ -171,20 +216,22 @@ def run_program(input_file):
     :param input_file: a text file of OCLC numbers
     :return: a string containing the path to the new excel spreadsheet
     """
-    token = verify_token()
+    credential_file = "./src/credentials.json"
+    token = verify_token(credential_file)
     work_book = op.Workbook()
     work_sheet = initialize_sheet(work_book)
     infile = open(input_file, "r")
 
-    for element in infile:
-        with (MetadataSession(authorization = token) as session):
-            result = session.bib_get(element)
-            response = session.summary_holdings_get(element)
-            data = response.json()
-            xml_str = result.text
-            details = get_all_details(data, xml_str)
-            work_sheet.append(details)
+    all_info = get_all_info(infile, token)
 
+    for item in all_info:
+        result = item[0]
+        response = item[1]
+        data = response.json()
+        xml_str = result.text
+        details = get_all_details(data, xml_str)
+        work_sheet.append(details)
+    
     set_column_widths(work_sheet)
 
     save_path = select_result_location()

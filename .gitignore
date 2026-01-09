@@ -1,4 +1,4 @@
-config.py
+src/credentials.json
 .venv/
 dist/
 **/__pycache__/

@@ -1,4 +1,4 @@
-from tkinter import filedialog, messagebox, ttk, Tk, StringVar, Label, Text
+from tkinter import filedialog, messagebox, ttk, Tk, StringVar, Label
 from os import path
 from threading import Thread
 from main import run_program

@@ -1,3 +1,0 @@
-KEY = ""
-SECRET = ""
-SCOPES = ""
