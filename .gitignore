@@ -1,5 +1,8 @@
-src/credentials.json
+# Virtual environment
 .venv/
-dist/
-**/__pycache__/
-src/build/
+
+# Pycache
+__pycache__/
+
+# Environment variables
+.env
