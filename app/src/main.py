@@ -1,11 +1,11 @@
 from bookops_worldcat.authorize import WorldcatAccessToken
 from bookops_worldcat.metadata_api import MetadataSession
 from concurrent.futures import ThreadPoolExecutor
+from dotenv import load_dotenv
 import xml.etree.cElementTree as ET
 import openpyxl as op
 from tkinter import Tk, filedialog
 import os
-import json
 
 def verify_token(filepath):
     """
@@ -14,13 +14,13 @@ def verify_token(filepath):
 
     :return: a WorldcatAccessToken
     """
-    with open(filepath, "r") as file:
-        data = json.load(file)
-        token = WorldcatAccessToken(
-            key=data["key"],
-            secret=data["secret"],
-            scopes=data["scopes"],
-        )
+    load_dotenv(filepath)
+
+    token = WorldcatAccessToken(
+        key = os.getenv("API_KEY"),
+        secret = os.getenv("API_SECRET"),
+        scopes = os.getenv("API_SCOPES")
+    )
 
     print(token)
     print("Is expired: " + str(token.is_expired()))
@@ -216,7 +216,7 @@ def run_program(input_file):
     :param input_file: a text file of OCLC numbers
     :return: a string containing the path to the new excel spreadsheet
     """
-    credential_file = "./src/credentials.json"
+    credential_file = "./.env" # "./src/credentials.json"
     token = verify_token(credential_file)
     work_book = op.Workbook()
     work_sheet = initialize_sheet(work_book)
