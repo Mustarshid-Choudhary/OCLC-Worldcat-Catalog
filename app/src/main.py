@@ -9,7 +9,7 @@ import os
 
 def verify_token(filepath):
     """
-    Given a .json file with the valid API credentials, create and return a
+    Given a .env file with the valid API credentials, create and return a
     WorldcatAccessToken.
 
     :return: a WorldcatAccessToken
@@ -36,8 +36,11 @@ def initialize_sheet(work_book):
     """
     work_sheet = work_book.active
     work_sheet.title = "Book Records"
-
-    work_sheet.append(["OCLC Number", "Online Versions", "Holdings", "Shared Prints", "Title", "Edition", "Publisher", "Date 1", "Date 2", "Record Source"])
+    
+    work_sheet.append(["Title", "Edition", "Publisher", 
+                       "Date 1", "Date 2", "Holdings", 
+                       "Shared Prints", "Online Versions", 
+                       "Record Source", "OCLC Number"])
 
     return work_sheet
 
@@ -47,7 +50,8 @@ def get_all_details(data, xml_str):
 
     :param data: a dictionary containing all information
     :param xml_str: a string containing the XML data
-    :return: a list containing all of the details pertaining to the OCLC number in the order that they appear in the excel sheet
+    :return: a list containing all of the details pertaining to the OCLC 
+    number in the order that they appear in the excel sheet
     """
     # Holdings extraction
     holdings = data['totalHoldingCount']
@@ -119,8 +123,11 @@ def get_all_details(data, xml_str):
         record_source_details = " ".join(sub.text for sub in subfield if sub.text)
     else:
         record_source_details = "Not Found"
-    
-    return [oclc_number, online_version_details, holdings, sharedprints, title_details, edition_details, publisher_details, date_one_details, date_two_details, record_source_details]
+
+    return [title_details, edition_details, publisher_details, 
+            date_one_details, date_two_details, holdings, 
+            sharedprints, online_version_details, 
+            record_source_details, oclc_number]
 
 def set_column_widths(work_sheet):
     """
@@ -129,9 +136,9 @@ def set_column_widths(work_sheet):
     :param work_sheet: the excel spreadsheet
     """
     column_widths = {
-        'A': 16, 'B': 21, 'C': 10, 'D': 10,
-        'E': 115, 'F': 20, 'G': 25, 'H': 10,
-        'I': 10, 'J': 15
+        'A': 115, 'B': 20, 'C': 25, 'D': 10,
+        'E': 10, 'F': 10, 'G': 13, 'H': 21,
+        'I': 15, 'J': 16
     }
 
     for column, width in column_widths.items():
@@ -139,7 +146,7 @@ def set_column_widths(work_sheet):
 
 def select_result_location():
     """
-    Return the path to the new excel file (where it should be saved).
+    Return the path to the new Excel file (where it should be saved).
 
     :return: a string containing the path to the new excel file
     """
@@ -156,11 +163,13 @@ def select_result_location():
 
 def save_new_sheet(path, work_book):
     """
-    Save the new excel spreadsheet to the indicated directory. If the save was canceled, return None.
+    Save the new excel spreadsheet to the indicated directory. If the 
+    save was canceled, return None.
 
     :param path: the path to the directory
     :param work_book: the workbook excel
-    :return: the path to the excel spreadsheet, None if the save was canceled
+    :return: the path to the excel spreadsheet, None if the save 
+    was canceled
     """
     if path:
         work_book.save(path)
@@ -216,7 +225,7 @@ def run_program(input_file):
     :param input_file: a text file of OCLC numbers
     :return: a string containing the path to the new excel spreadsheet
     """
-    credential_file = "./.env" # "./src/credentials.json"
+    credential_file = "./.env"
     token = verify_token(credential_file)
     work_book = op.Workbook()
     work_sheet = initialize_sheet(work_book)
