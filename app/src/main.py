@@ -5,7 +5,8 @@ from dotenv import load_dotenv
 import xml.etree.cElementTree as ET
 import openpyxl as op
 from tkinter import Tk, filedialog
-import os
+from os import getenv, startfile
+from pathlib import Path
 
 def verify_token(filepath):
     """
@@ -17,9 +18,9 @@ def verify_token(filepath):
     load_dotenv(filepath)
 
     token = WorldcatAccessToken(
-        key = os.getenv("API_KEY"),
-        secret = os.getenv("API_SECRET"),
-        scopes = os.getenv("API_SCOPES")
+        key = getenv("API_KEY"),
+        secret = getenv("API_SECRET"),
+        scopes = getenv("API_SCOPES")
     )
 
     print(token)
@@ -174,7 +175,7 @@ def save_new_sheet(path, work_book):
     if path:
         work_book.save(path)
         print(f"Excel file saved to: {path}")
-        os.startfile(path)
+        startfile(path)
         return path
     else:
         print("Save canceled.")
@@ -225,7 +226,7 @@ def run_program(input_file):
     :param input_file: a text file of OCLC numbers
     :return: a string containing the path to the new excel spreadsheet
     """
-    credential_file = "./.env"
+    credential_file = Path(__file__).resolve().parent.parent / ".env"
     token = verify_token(credential_file)
     work_book = op.Workbook()
     work_sheet = initialize_sheet(work_book)
